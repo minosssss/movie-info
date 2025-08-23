@@ -1,53 +1,52 @@
 <template>
-  <h1>영화정보</h1>
-  <div v-for="(movie, i) in data" :key="i" class="item" @keyup.esc="isModal=false">
-    <figure>
-      <img :src="`${movie.imgUrl}`" :alt="movie.title">
-    </figure>
-    <div class="info">
-      <h3 class="bg-yellow">{{ movie.title }}</h3>
-      <p>개봉: {{ movie.year }}</p>
-      <p>장르: {{ movie.category }}</p>
-      <button @:click="increseLike(i)">좋아요
-      </button>
-      <span>{{ movie.like }}</span>
-      <p>
-        <!-- 상세보기 버튼 클릭시 해당 영화 데이터를 selectedData에 저장 -->
-        <button @click="showDetail(movie)">상세보기</button>
-      </p>
-    </div>
-  </div>
-
-  <div class="modal" v-if="isModal"  tabindex="0">
-    <div class="inner">
-      <h3>{{ selectedData.title }}</h3>
-      <img :src="selectedData.imgUrl" :alt="selectedData.title" style="width: 200px; margin-bottom: 1rem;">
-      <p><strong>개봉년도:</strong> {{ selectedData.year }}</p>
-      <p><strong>장르:</strong> {{ selectedData.category }}</p>
-      <p><strong>좋아요:</strong> {{ selectedData.like }}</p>
-      <p><strong>감독:</strong> {{ selectedData.director }}</p>
-      <p><strong>줄거리:</strong> {{ selectedData.plot }}</p>
-      <button @click="closeModal">닫기</button>
-    </div>
-  </div>
+  <Navbar />
+  <Event :text="text"/>
+  <SearchBar v-model="query"/>
+  <Movies :data="viewData" @showDetail="showDetail" @increaseLike="increaseLike" @closeModal="closeModal"/>
+  <Modal :isModal="isModal" :selectedData="selectedData" @closeModal="isModal = false"/>
 </template>
 
 <script>
-import data from './assets/movies'; // 영화 데이터
-console.log(data);
-
+import mock from './assets/movies';
+import Navbar from "@/components/Navbar.vue";
+import EventItem from "@/components/EventItem.vue";
+import Modal from "@/components/Modal.vue"; // 영화 데이터
+import Movies from "@/components/Movies.vue";
+import SearchBar from "@/components/SearchBar.vue";
+import data from "@/assets/movies";
 export default {
   name: 'App',
   data() {
     return {
       isModal: false,
-      data,
+      data: mock,
+      query: '',
       selectedData: null,
+      text:"NETFLIX 강렬한 운명의 드라마, 경성크리처"
     }
   },
+  computed: {
+    // 화면에 뿌릴 리스트(필터링 규칙은 여기서 관리)
+    viewData() {
+      const query = this.query.trim().toLowerCase()
+      if (!query) return this.data
+      const results = data.filter(item => item.title.includes(query));
+      // 여기서 “1개 이상이면 바꿔 보여주기”가 자연스럽게 만족됨
+      // (0개면 빈 목록, 필요하면 원본으로 되돌릴 수도 있음)
+      if (results.length === 0) {
+        return [];
+      }
+      return results.length > 0 && results // 0개일 땐 원본 유지하려면 이 라인 유지
+    },
+  },
+
   methods: {
-    increseLike(i) {
-      this.data[i].like += 1;
+    increaseLike(viewIndex) {
+      // viewData의 인덱스를 data 매핑해서 원본을 수정
+      const movieInView = this.viewData[viewIndex]
+      const idx = this.data.indexOf(movieInView)
+      if (idx !== -1) this.data[idx].like += 1
+      // 👇 더 안전하게 하려면 각 항목에 id를 두고 findIndex(id)로 찾는 걸 추천
     },
     // 상세보기 메서드
     showDetail(movie) {
@@ -59,6 +58,13 @@ export default {
       this.isModal = false;
       this.selectedData = null;   // 선택 데이터 초기화 (선택사항)
     }
+  },
+  components: {
+    Navbar: Navbar,
+    Modal: Modal,
+    Event: EventItem,
+    Movies: Movies,
+    SearchBar: SearchBar,
   }
 }
 </script>

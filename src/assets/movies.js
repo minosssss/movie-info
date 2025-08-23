@@ -1,4 +1,4 @@
-const data = [
+const mock = [
   {
     title: "노량",
     year: 2023,
@@ -23,4 +23,4 @@ const data = [
   },
 ]
 
-export default data;
+export default mock;
